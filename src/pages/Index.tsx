@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -28,6 +28,11 @@ const STYLES = [
   { value: 'watercolor', label: '🖌️ Акварель' },
   { value: 'cyberpunk', label: '🤖 Киберпанк' },
   { value: 'minimalist', label: '⚪ Минимализм' },
+  { value: 'anime', label: '🎌 Аниме' },
+  { value: 'oil-painting', label: '🖼️ Масляная живопись' },
+  { value: 'sketch', label: '✏️ Скетч' },
+  { value: 'abstract', label: '🌈 Абстракция' },
+  { value: '3d', label: '🎮 3D рендер' },
 ];
 
 const API_URL = 'https://functions.poehali.dev/d916c5fd-9afd-4c10-b043-a6da6bd0aa5e';
@@ -35,14 +40,23 @@ const API_URL = 'https://functions.poehali.dev/d916c5fd-9afd-4c10-b043-a6da6bd0a
 export default function Index() {
   const [prompt, setPrompt] = useState('');
   const [selectedStyle, setSelectedStyle] = useState('modern');
-  const [images, setImages] = useState<GeneratedImage[]>([]);
+  const [lastImage, setLastImage] = useState<GeneratedImage | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [fullscreenImage, setFullscreenImage] = useState<GeneratedImage | null>(null);
   const [activeTab, setActiveTab] = useState('generator');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [uploadedImagePreview, setUploadedImagePreview] = useState<string | null>(null);
+  const [isDark, setIsDark] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDark]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -115,14 +129,14 @@ export default function Index() {
           timestamp: new Date(),
         };
 
-        setImages((prev) => [newImage, ...prev]);
+        setLastImage(newImage);
         setActiveTab('gallery');
-        
+
         toast({
           title: 'Успешно!',
           description: 'Изображение создано',
         });
-        
+
         handleRemoveImage();
         setPrompt('');
       } else {
@@ -141,18 +155,38 @@ export default function Index() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-cyan-50/50">
+    <div className="min-h-screen bg-background transition-colors">
+      <div className="absolute top-4 right-4 z-50">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setIsDark(!isDark)}
+          className="rounded-full"
+        >
+          <Icon name={isDark ? 'Sun' : 'Moon'} size={20} />
+        </Button>
+      </div>
+
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <header className="text-center mb-12 space-y-4">
+        <header className="text-center mb-8 space-y-4">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-4">
             <Icon name="Sparkles" size={40} className="text-primary" />
           </div>
-          <h1 className="text-6xl font-bold text-foreground tracking-tight">
-            AI Генератор
+          <h1 className="text-7xl font-bold text-foreground tracking-tight">
+            IIUYTA
           </h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Бесконечные генерации изображений с помощью нейросети Nano Banano
+            AI генератор изображений с бесконечными возможностями
           </p>
+          <a
+            href="https://t.me/IIUYTA"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-colors font-medium"
+          >
+            <Icon name="Send" size={20} />
+            Наш Telegram канал
+          </a>
         </header>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -162,13 +196,13 @@ export default function Index() {
               Генератор
             </TabsTrigger>
             <TabsTrigger value="gallery" className="text-base">
-              <Icon name="Images" size={18} className="mr-2" />
-              Галерея ({images.length})
+              <Icon name="Image" size={18} className="mr-2" />
+              Галерея
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="generator" className="space-y-8">
-            <Card className="max-w-3xl mx-auto p-8 shadow-xl border-0 bg-white/80 backdrop-blur">
+            <Card className="max-w-3xl mx-auto p-8 shadow-xl border">
               <div className="space-y-6">
                 <div className="space-y-3">
                   <label className="text-sm font-medium text-foreground flex items-center gap-2">
@@ -208,7 +242,7 @@ export default function Index() {
                     <Icon name="Upload" size={16} />
                     Загрузить изображение для редактирования (опционально)
                   </label>
-                  
+
                   {uploadedImagePreview ? (
                     <div className="relative">
                       <img
@@ -239,7 +273,7 @@ export default function Index() {
                       </p>
                     </div>
                   )}
-                  
+
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -270,20 +304,20 @@ export default function Index() {
               </div>
             </Card>
 
-            {images.length > 0 && (
+            {lastImage && (
               <div className="max-w-3xl mx-auto">
                 <h3 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
                   <Icon name="Zap" size={20} />
                   Последняя генерация
                 </h3>
                 <Card
-                  className="overflow-hidden cursor-pointer transition-all hover:shadow-2xl border-0 group"
-                  onClick={() => setFullscreenImage(images[0])}
+                  className="overflow-hidden cursor-pointer transition-all hover:shadow-2xl border group"
+                  onClick={() => setFullscreenImage(lastImage)}
                 >
                   <div className="relative">
                     <img
-                      src={images[0].url}
-                      alt={images[0].prompt}
+                      src={lastImage.url}
+                      alt={lastImage.prompt}
                       className="w-full h-auto"
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all flex items-center justify-center">
@@ -294,9 +328,9 @@ export default function Index() {
                       />
                     </div>
                   </div>
-                  <div className="p-4 bg-white">
+                  <div className="p-4 bg-card">
                     <p className="text-sm text-muted-foreground line-clamp-2">
-                      {images[0].prompt}
+                      {lastImage.prompt}
                     </p>
                   </div>
                 </Card>
@@ -305,7 +339,7 @@ export default function Index() {
           </TabsContent>
 
           <TabsContent value="gallery">
-            {images.length === 0 ? (
+            {!lastImage ? (
               <div className="text-center py-16 space-y-4">
                 <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-muted/50 mb-4">
                   <Icon name="ImageOff" size={48} className="text-muted-foreground/50" />
@@ -326,56 +360,54 @@ export default function Index() {
                 </Button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {images.map((image) => (
-                  <Card
-                    key={image.id}
-                    className="overflow-hidden cursor-pointer group transition-all hover:shadow-2xl border-0"
-                    onClick={() => setFullscreenImage(image)}
-                  >
-                    <div className="relative aspect-square overflow-hidden bg-muted">
-                      <img
-                        src={image.url}
-                        alt={image.prompt}
-                        className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-300"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="absolute bottom-0 left-0 right-0 p-4">
-                          <Icon
-                            name="Maximize2"
-                            size={24}
-                            className="text-white mx-auto drop-shadow-lg"
-                          />
-                        </div>
+              <div className="max-w-4xl mx-auto">
+                <Card
+                  className="overflow-hidden cursor-pointer group transition-all hover:shadow-2xl border"
+                  onClick={() => setFullscreenImage(lastImage)}
+                >
+                  <div className="relative aspect-square overflow-hidden bg-muted">
+                    <img
+                      src={lastImage.url}
+                      alt={lastImage.prompt}
+                      className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute bottom-0 left-0 right-0 p-4">
+                        <Icon
+                          name="Maximize2"
+                          size={24}
+                          className="text-white mx-auto drop-shadow-lg"
+                        />
                       </div>
                     </div>
-                    <div className="p-4 bg-white space-y-2">
-                      <p className="text-sm text-foreground line-clamp-2 font-medium">
-                        {image.prompt}
-                      </p>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          {STYLES.find((s) => s.value === image.style)?.label}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Icon name="Clock" size={12} />
-                          {image.timestamp.toLocaleTimeString('ru-RU', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </span>
-                      </div>
+                  </div>
+                  <div className="p-6 bg-card space-y-3">
+                    <p className="text-base text-foreground font-medium">
+                      {lastImage.prompt}
+                    </p>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span className="flex items-center gap-2">
+                        <Icon name="Palette" size={16} />
+                        {STYLES.find((s) => s.value === lastImage.style)?.label}
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <Icon name="Clock" size={16} />
+                        {lastImage.timestamp.toLocaleTimeString('ru-RU', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
                     </div>
-                  </Card>
-                ))}
+                  </div>
+                </Card>
               </div>
             )}
           </TabsContent>
         </Tabs>
 
-        <Dialog open={!!fullscreenImage} onOpenChange={() => setFullscreenImage(null)}>
-          <DialogContent className="max-w-7xl w-[95vw] h-[95vh] p-0 overflow-hidden">
-            {fullscreenImage && (
+        {fullscreenImage && (
+          <Dialog open={!!fullscreenImage} onOpenChange={() => setFullscreenImage(null)}>
+            <DialogContent className="max-w-7xl w-[95vw] h-[95vh] p-0 overflow-hidden">
               <div className="flex flex-col h-full bg-black">
                 <div className="flex-1 flex items-center justify-center p-4">
                   <img
@@ -384,7 +416,7 @@ export default function Index() {
                     className="max-w-full max-h-full object-contain"
                   />
                 </div>
-                <div className="bg-white p-6 space-y-3 border-t">
+                <div className="bg-card p-6 space-y-3 border-t">
                   <p className="text-lg font-semibold text-foreground">
                     {fullscreenImage.prompt}
                   </p>
@@ -400,9 +432,9 @@ export default function Index() {
                   </div>
                 </div>
               </div>
-            )}
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     </div>
   );
