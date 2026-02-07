@@ -1,0 +1,32 @@
+{
+  "tests": [
+    {
+      "name": "Test image generation with prompt",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "prompt": "beautiful sunset over ocean",
+        "style": "modern"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "success": true,
+        "imageUrl": "string",
+        "prompt": "string",
+        "style": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Test missing prompt error",
+      "method": "POST",
+      "path": "/",
+      "body": {},
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
